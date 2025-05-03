@@ -1,0 +1,17 @@
+../Src/main.c:46:5:main	1
+../Src/main.c:77:6:SetSystemClockto16MHz	2
+../Src/main.c:111:6:SPI1ClockEnable	1
+../Src/main.c:118:6:GPIOAClockEnable	1
+../Src/main.c:125:6:SPI1Init	1
+../Src/main.c:159:6:SPI1WriteToDR	1
+../Src/main.c:166:6:WaitForTransmissionEnd	3
+../Src/main.c:174:6:EnableSlave	1
+../Src/main.c:181:6:DisableSlave	1
+../Src/main.c:188:6:SPI1_Transmit	1
+../Src/main.c:196:6:SPI1PinsInit	1
+../Src/main.c:223:6:max7219_write	1
+../Src/main.c:229:6:matrixClear	2
+../Src/main.c:237:6:matrixInit	1
+../Src/main.c:248:6:positionToMatrixPos	10
+../Src/main.c:285:6:LEDMatrixWrite	2
+../Src/main.c:295:6:LEDMatrixRowWrite	1
