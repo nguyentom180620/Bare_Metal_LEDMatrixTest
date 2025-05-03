@@ -11,9 +11,17 @@
 #define RCC_CR			(RCC + 0x00)
 #define RCC_CFGR		(RCC + 0x08)
 #define RCC_AHB1ENR		(RCC + 0x30)
+#define RCC_APB1		(RCC + 0x40)
 #define RCC_APB2ENR		(RCC + 0x44)
 #define FLASH			0x40023C00
 #define FLASH_ACR		(FLASH + 0x00)
+#define TIM3		0x40000400
+#define TIM3_CR1	(TIM3 + 0x00)
+#define TIM3_DIER	(TIM3 + 0x0C)
+#define TIM3_SR		(TIM3 + 0x10)
+#define TIM3_CNT	(TIM3 + 0x24)
+#define TIM3_PSC	(TIM3 + 0x28)
+#define TIM3_ARR	(TIM3 + 0x2C)
 #define SPI1			0x40013000
 #define SPI1_CR1		(SPI1 + 0x00)
 #define SPI1_CR2		(SPI1 + 0x04)
@@ -27,6 +35,8 @@
 #define CS_BSRR			(CS_Port + 0x18)
 
 static void SetSystemClockto16MHz(void);
+static void ConfigureTimer3(void);
+static void Delay(uint32_t ms);
 static void SPI1ClockEnable(void);
 static void GPIOAClockEnable(void);
 static void SPI1Init(void);
@@ -46,6 +56,7 @@ static void LEDMatrixRowWrite(uint8_t outputArray[], uint8_t row);
 int main(void)
 {
 	SetSystemClockto16MHz();
+	ConfigureTimer3();
 	SPI1ClockEnable();
 	GPIOAClockEnable();
 
@@ -69,9 +80,23 @@ int main(void)
 
 	positionToMatrixPos(x_pos, y_pos, numberOfCords, outputArray); // Makes it easy for user
 
-	LEDMatrixWrite(outputArray);
-
-	while(1);
+	while(1)	// Now, let's do a small show!
+	{
+		for (volatile int i = 1; i <= 8; i++)
+		{
+			for (volatile int j = 1; j <= i; j++)
+			{
+				LEDMatrixRowWrite(outputArray, j);
+			}
+			Delay(500); // Half a second
+		}
+		matrixClear();
+		Delay(500);
+		LEDMatrixWrite(outputArray);
+		Delay(500);
+		matrixClear();
+		Delay(1000);
+	}
 }
 
 void SetSystemClockto16MHz(void)
@@ -106,6 +131,54 @@ void SetSystemClockto16MHz(void)
 
 	// Turn off HSE
 	*RCC_CR_Ptr &= ~((uint32_t)0x1 << 16);
+}
+
+void ConfigureTimer3(void)
+{
+	// Enable TIM3 Clock
+	uint32_t *RCC_APB1_Ptr = (uint32_t*)RCC_APB1;
+	*RCC_APB1_Ptr |= (uint32_t)0x2;
+
+	// Set Prescaler
+	uint32_t *TIM3_PSC_Ptr = (uint32_t*)TIM3_PSC;
+	*TIM3_PSC_Ptr |= (uint32_t)0xF;
+
+	// Set Auto-Reload
+	uint32_t *TIM3_ARR_Ptr = (uint32_t*)TIM3_ARR;
+	*TIM3_ARR_Ptr = (uint32_t)0x3E7;
+
+//	// Enable Interrupt
+//	uint32_t *TIM3_DIER_Ptr = (uint32_t*)TIM3_DIER;
+//	*TIM3_DIER_Ptr |= (uint32_t)0x1;
+
+	// Clear UIF Bit
+	uint32_t *TIM3_SR_Ptr = (uint32_t*)TIM3_SR;
+	*TIM3_SR_Ptr &= (uint32_t)0xFFFE;
+
+//	// Enable NVIC Interrupt for Timer 3
+//	NVIC_EnableIRQ(TIM3_IRQn);
+
+	// Enable TIM3
+	uint32_t *TIM3_CR1_Ptr = (uint32_t*)TIM3_CR1;
+	*TIM3_CR1_Ptr = (uint32_t)0b1 << 0;
+}
+
+void Delay(uint32_t ms)
+{
+	volatile uint32_t i;
+	uint32_t *TIM3_CNT_Ptr = (uint32_t*)TIM3_CNT;
+	uint32_t *TIM3_SR_Ptr = (uint32_t*)TIM3_SR;
+	for (i = 0; i <= ms; i++)
+	{
+		// Clear TIM3 Count
+		*TIM3_CNT_Ptr = 0;
+
+		// Wait for UIF (1 cycle of 1kHz clocking)
+		while((*TIM3_SR_Ptr & 0x1) == 0);	// This will make a 1ms delay
+
+		// Reset UIF
+		*TIM3_SR_Ptr &= (uint32_t)0xFFFE;
+	}
 }
 
 void SPI1ClockEnable(void)
