@@ -49,9 +49,11 @@ static void SPI1PinsInit(void);
 static void max7219_write(uint8_t addr, uint8_t data);
 static void matrixClear(void);
 static void matrixInit(void);
+static uint8_t intToHexPosition(uint8_t val);
 static void positionToMatrixPos(uint8_t x_pos[], uint8_t y_pos[], int numberOfCords, uint8_t outputArray[]);
 static void LEDMatrixWrite(uint8_t outputArray[]);
 static void LEDMatrixRowWrite(uint8_t outputArray[], uint8_t row);
+static void LEDMatrixColumnWrite(uint8_t outputArray[], uint8_t col);
 
 int main(void)
 {
@@ -80,16 +82,32 @@ int main(void)
 
 	positionToMatrixPos(x_pos, y_pos, numberOfCords, outputArray); // Makes it easy for user
 
-	while(1)	// Now, let's do a small show!
+//	while(1)	// Now, let's do a small show! This is the row, bottom to top version
+//	{
+//		for (volatile int i = 1; i <= 8; i++)
+//		{
+//			for (volatile int j = 1; j <= i; j++)
+//			{
+//				LEDMatrixRowWrite(outputArray, j);
+//			}
+//			Delay(500); // Half a second
+//		}
+//		matrixClear();
+//		Delay(500);
+//		LEDMatrixWrite(outputArray);
+//		Delay(500);
+//		matrixClear();
+//		Delay(1000);
+//	}
+
+	while(1)	// Now, this is the column, left to right version
 	{
 		for (volatile int i = 1; i <= 8; i++)
 		{
-			for (volatile int j = 1; j <= i; j++)
-			{
-				LEDMatrixRowWrite(outputArray, j);
-			}
-			Delay(500); // Half a second
+			LEDMatrixColumnWrite(outputArray, i);
+			Delay(500);
 		}
+		Delay(500);
 		matrixClear();
 		Delay(500);
 		LEDMatrixWrite(outputArray);
@@ -318,39 +336,46 @@ void matrixInit(void)
 	matrixClear();
 }
 
+uint8_t intToHexPosition(uint8_t val)
+{
+	switch (val)
+	{
+		case 1:
+			return 0x01;
+			break;
+		case 2:
+			return 0x02;
+			break;
+		case 3:
+			return 0x04;
+			break;
+		case 4:
+			return 0x08;
+			break;
+		case 5:
+			return 0x10;
+			break;
+		case 6:
+			return 0x20;
+			break;
+		case 7:
+			return 0x40;
+			break;
+		case 8:
+			return 0x80;
+			break;
+		default:
+			return -1;		// Should never get this, only enter values between 1 and 8
+	}
+}
+
 void positionToMatrixPos(uint8_t x_pos[], uint8_t y_pos[], int numberOfCords, uint8_t outputArray[])
 {
 	for (int i = 0; i < numberOfCords; i++)
 	{
 		uint8_t x = x_pos[i];
 		uint8_t y = y_pos[i];
-		switch (x)
-		{
-			case 1:
-				x = 0x01;
-				break;
-			case 2:
-				x = 0x02;
-				break;
-			case 3:
-				x = 0x04;
-				break;
-			case 4:
-				x = 0x08;
-				break;
-			case 5:
-				x = 0x10;
-				break;
-			case 6:
-				x = 0x20;
-				break;
-			case 7:
-				x = 0x40;
-				break;
-			case 8:
-				x = 0x80;
-				break;
-		}
+		x = intToHexPosition(x);
 		outputArray[y] |= x;
 	}
 }
@@ -370,4 +395,19 @@ void LEDMatrixRowWrite(uint8_t outputArray[], uint8_t row)
 	uint16_t writePos;
 	writePos = (row << 8) | outputArray[row];
 	SPI1_Transmit(writePos);
+}
+
+void LEDMatrixColumnWrite(uint8_t outputArray[], uint8_t col)
+{
+	// We want to write from col 1 to this col variable (inclusive)
+	for (int i = 1; i <= 8; i++)
+	{
+		uint8_t row_val = outputArray[i];
+		for (int j = 8; j > col; j--)
+		{
+			row_val &= ~intToHexPosition(j);
+		}
+		uint16_t writeRow = (i << 8) | row_val;
+		SPI1_Transmit(writeRow);
+	}
 }
