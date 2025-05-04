@@ -78,36 +78,20 @@ int main(void)
 	{
 	5, 6, 4, 7, 3, 7, 2, 6, 2, 6, 3, 7, 4, 7, 5, 6
 	};
-	uint8_t outputArray[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0}; // Make sure outputArray initialize to zeroes
+	uint8_t outputArray[9] = {0}; // Make sure outputArray initialize to zeroes
 
 	positionToMatrixPos(x_pos, y_pos, numberOfCords, outputArray); // Makes it easy for user
 
-//	while(1)	// Now, let's do a small show! This is the row, bottom to top version
-//	{
-//		for (volatile int i = 1; i <= 8; i++)
-//		{
-//			for (volatile int j = 1; j <= i; j++)
-//			{
-//				LEDMatrixRowWrite(outputArray, j);
-//			}
-//			Delay(500); // Half a second
-//		}
-//		matrixClear();
-//		Delay(500);
-//		LEDMatrixWrite(outputArray);
-//		Delay(500);
-//		matrixClear();
-//		Delay(1000);
-//	}
-
-	while(1)	// Now, this is the column, left to right version
+	while(1)	// Now, let's do a small show! This is the row, bottom to top version
 	{
 		for (volatile int i = 1; i <= 8; i++)
 		{
-			LEDMatrixColumnWrite(outputArray, i);
-			Delay(500);
+			for (volatile int j = 1; j <= i; j++)
+			{
+				LEDMatrixRowWrite(outputArray, j);
+			}
+			Delay(500); // Half a second
 		}
-		Delay(500);
 		matrixClear();
 		Delay(500);
 		LEDMatrixWrite(outputArray);
@@ -115,6 +99,22 @@ int main(void)
 		matrixClear();
 		Delay(1000);
 	}
+
+//	while(1)	// Now, this is the column, left to right version
+//	{
+//		for (volatile int i = 1; i <= 8; i++)
+//		{
+//			LEDMatrixColumnWrite(outputArray, i);
+//			Delay(500);
+//		}
+//		Delay(500);
+//		matrixClear();
+//		Delay(500);
+//		LEDMatrixWrite(outputArray);
+//		Delay(500);
+//		matrixClear();
+//		Delay(1000);
+//	}
 }
 
 void SetSystemClockto16MHz(void)
